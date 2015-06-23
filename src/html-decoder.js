@@ -31,33 +31,6 @@ function HTMLDecoder(config) {
 /////////////////////////////////////////////////////
 
 /**
-* @function HTMLDecoder#encode
-*
-* @description
-* HTML encode the character
-*
-* TODO: it is blindly encoding, need to enhance it later OR simply remove it?
-*/
-HTMLDecoder.prototype.encode = function(str) {
-    var l = str.length,
-        c1, c2, r = '';
-
-    for(var i=0;i<l;++i) {
-        c1 = str.charCodeAt(i);
-        // 55296-57343
-        if (c1>=0xD800 && c1<=0xDFFF) {
-            c2 = str.codePointAt(i);
-            if (c1 !== c2) {
-                i++; // consume one more char if c1 !== c2 and i+1<l
-                c1 = c2;
-            }
-        }
-        r += "&#"+c1+";";
-    }
-    return r;
-};
-
-/**
 * @function HTMLDecoder#decode
 *
 * @description
