@@ -8,6 +8,8 @@ See the accompanying LICENSE file for terms.
 var htmlEntities = [
     { o: { "&A;":        undefined }, result: { paths: ['A',';'], codepoints: undefined } },
     { o: { "&Aa;":       undefined }, result: { paths: ['A','a',';'], codepoints: undefined } },
+    // { o: { "&A;":        { "codepoints": undefined, "characters": undefined } }, result: { paths: ['A',';'], codepoints: undefined } },
+    // { o: { "&Aa;":       { "codepoints": undefined, "characters": undefined } }, result: { paths: ['A','a',';'], codepoints: undefined } },
 
     { o: { "&Aacute;":   { "codepoints": [193], "characters": "\u00C1" } }, result: { paths: ['A','a','c','u','t','e',';'], codepoints: [193] } },
     { o: { "&Aacute":    { "codepoints": [193], "characters": "\u00C1" } }, result: { paths: ['A','a','c','u','t','e'], codepoints: [193] } },
@@ -20,7 +22,7 @@ exports.htmlEntities = htmlEntities;
 
 /* for the pattern cannot be found */
 var htmlEntitiesFindString = [
-    { str: '&SmallCircle;', result: { codepoints: [ 8728 ], characters: '∘' } },
+    { str: '&SmallCircle;', result: { c: '∘' } },
     { str: '&SmallCircle',  result: undefined },
     { str: '&XXX',          result: undefined },
 

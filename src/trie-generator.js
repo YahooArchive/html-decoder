@@ -83,11 +83,12 @@ TrieGenerator.prototype._addStringToTrie = function(trie, str, info) {
 */
 TrieGenerator.prototype._addCharToTrie = function(trie, c, info, isLastElement) {
     var index = c;
-    if (trie[index] === null || trie[index] === undefined) {
+    if (typeof trie[index] === 'undefined') {
         trie[index] = {};
     }
+    // we need to carry only the characters
     if (isLastElement)
-        trie[index][0] = info;
+        trie[index][0] = info.characters;
     return trie[index];
 };
 

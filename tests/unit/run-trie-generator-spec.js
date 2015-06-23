@@ -29,7 +29,7 @@ Authors: Nera Liu <neraliu@yahoo-inc.com, neraliu@gmail.com>
                 inspectTrie(trie[arr[currDepth]], arr, codepoint, currDepth+1);
             } else {
                 // test for codepoints
-                expect(tested[0].characters).to.equal(String.fromCodePoint.apply(String, codepoint));
+                expect(tested[0]).to.equal(String.fromCodePoint.apply(String, codepoint));
             }
         }
 
@@ -51,7 +51,7 @@ Authors: Nera Liu <neraliu@yahoo-inc.com, neraliu@gmail.com>
                 if (srcEntities.hasOwnProperty(key)) {
                     var info = srcEntities[key];
                     var r = decoder._findString(trie, key.substring(1));
-                    expect(r.codepoints).to.deep.equal(info.codepoints);
+                    expect(r.c).to.equal(info.characters);
                 }
             }
 

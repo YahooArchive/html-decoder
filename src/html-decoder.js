@@ -36,7 +36,7 @@ HTMLDecoder.decode = function(str) {
     return str.replace(HTMLDecoder.reCharReferenceDecode, function(m, named, number) {
         if (named) {
             r = HTMLDecoder._findString(trie, named);
-            return r? r.characters + (r.unconsumed ? r.unconsumed:'') : m;
+            return r ? r.c + (r.u || '') : m;
         } else {
             num = parseInt(number[0] <= '9' ? number : '0' + number); // parseInt('0xA0') is equiv to parseInt('A0', 16)
             return num === 0x00 ? '\uFFFD' // REPLACEMENT CHARACTER    
@@ -118,24 +118,27 @@ HTMLDecoder._findString = function(trie, str, pos) {
     if (trie[index] === null || trie[index] === undefined) { // end of trie
         if (matchTrace.length > 0) { // return the last longest matched pattern, else return undefined
             r = {
-                characters: matchTrace[matchTrace.length-1].info.characters,
-                unconsumed: matchTrace[matchTrace.length-1].unconsumed
+                c: matchTrace[matchTrace.length-1].c,
+                u: matchTrace[matchTrace.length-1].u
             };
         }
         return r;
     } else if (pos+1 === str.length) { // end of string
         if (trie[index][0] !== null && trie[index][0] !== undefined) {
-            r = trie[index][0];
+            r = {c: trie[index][0]};
         } else if (matchTrace.length > 0) { // return the last longest matched pattern, else return undefined
             r = {
-                characters: matchTrace[matchTrace.length-1].info.characters,
-                unconsumed: matchTrace[matchTrace.length-1].unconsumed
+                c: matchTrace[matchTrace.length-1].c,
+                u: matchTrace[matchTrace.length-1].u
             };
         }
         return r;
     } else {
         if (trie[index][0] !== null && trie[index][0] !== undefined) {
-            matchTrace.push({ unconsumed: str.substr(pos+1), info: trie[index][0] } );
+            matchTrace.push({
+              u: str.substr(pos+1), 
+              c: trie[index][0]
+            });
         }
         return HTMLDecoder._findString(trie[index], str, pos+1);
     }
