@@ -12,27 +12,18 @@ Authors: Nera Liu <neraliu@yahoo-inc.com>
 This utility generate the html entites saved json object.
 */
 (function() {
-
-    var fs = require('fs'),
-        htmlEntitiesDecoder = require("../src/html-decoder.js"),
-        noOfArgs = process.argv.length, 
-        file;
+    var path = require('path');
+    var TrieGenerator = require("../src/trie-generator.js"),
+        noOfArgs = process.argv.length;
         
     if (noOfArgs === 3) {
-        file = process.argv[2];
-        if (fs.existsSync(file)) {
-            var d = fs.readFileSync(file, "utf8"),
-                o = JSON.parse(d),
-                decoder = new htmlEntitiesDecoder({load:false}),
-                stime = Date.now();
+        var o = require(path.resolve(process.argv[2])),
+            trieGenerator = new TrieGenerator(),
+            stime = Date.now();
 
-            decoder.buildNamedCharReferenceTrie(o);
-            decoder.saveNamedCharReferenceTrie('./src/gen/trie.js');
-            console.log("Completed in " + (Date.now()-stime) + " milliseconds!");
-        } else {
-            console.log("[ERROR] "+file+" does not exist");
-            process.exit(1);
-        }
+        trieGenerator.build(o);
+        trieGenerator.save('./src/gen/trie.json');
+        console.log("Completed in " + (Date.now()-stime) + " milliseconds!");
     } else {
         console.log("Usage: genhtmlentities <html entities json file>");
         console.log("Please download from <a href='https://html.spec.whatwg.org/multipage/entities.json'>here</a>");
