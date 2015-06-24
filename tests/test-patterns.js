@@ -6,22 +6,23 @@ See the accompanying LICENSE file for terms.
 (function() {
 
 var htmlEntities = [
-    { o: { "&A;":        { "codepoints": [0], "characters": "" } }, result: { paths: [ ['A',';',0] ], codepoints: [ [0] ] } },
-    { o: { "&Aa;":       { "codepoints": [0], "characters": "" } }, result: { paths: [ ['A','a',';',0] ], codepoints: [ [0] ] } },
-    { o: { "&Aa;":       { "codepoints": [0], "characters": "" } }, result: { paths: [ ['A',';',0], ['A','a',';',0] ], codepoints: [ [0], [0] ] } },
+    { o: { "&A;":        undefined }, result: { paths: ['A',';'], codepoints: undefined } },
+    { o: { "&Aa;":       undefined }, result: { paths: ['A','a',';'], codepoints: undefined } },
+    // { o: { "&A;":        { "codepoints": undefined, "characters": undefined } }, result: { paths: ['A',';'], codepoints: undefined } },
+    // { o: { "&Aa;":       { "codepoints": undefined, "characters": undefined } }, result: { paths: ['A','a',';'], codepoints: undefined } },
 
-    { o: { "&Aacute;":   { "codepoints": [193], "characters": "\u00C1" } }, result: { paths: [ ['A','a','c','u','t','e',';',0] ], codepoints: [ [193] ] } },
-    { o: { "&Aacute":    { "codepoints": [193], "characters": "\u00C1" } }, result: { paths: [ ['A','a','c','u','t','e',0] ], codepoints: [ [193] ] } },
-    { o: { "&acE;":      { "codepoints": [8766, 819], "characters": "\u223E\u0333" } }, result: { paths: [ ['a','c','E',';',0] ], codepoints: [ [8766, 819] ] } },
-    { o: { "&cent":      { "codepoints": [162], "characters": "\u00A2" } }, result: { paths: [ ['c','e','n','t',0] ], codepoints: [ [162] ] } },
-    { o: { "&cent;":     { "codepoints": [162], "characters": "\u00A2" } }, result: { paths: [ ['c','e','n','t',';',0] ], codepoints: [ [162] ] } },
-    { o: { "&centerdot;":{ "codepoints": [183], "characters": "\u00B7" } }, result: { paths: [ ['c','e','n','t','e','r','d','o','t',';',0] ], codepoints: [ [183] ] } },
+    { o: { "&Aacute;":   { "codepoints": [193], "characters": "\u00C1" } }, result: { paths: ['A','a','c','u','t','e',';'], codepoints: [193] } },
+    { o: { "&Aacute":    { "codepoints": [193], "characters": "\u00C1" } }, result: { paths: ['A','a','c','u','t','e'], codepoints: [193] } },
+    { o: { "&acE;":      { "codepoints": [8766, 819], "characters": "\u223E\u0333" } }, result: { paths: ['a','c','E',';'], codepoints: [8766, 819] } },
+    { o: { "&cent":      { "codepoints": [162], "characters": "\u00A2" } }, result: { paths: ['c','e','n','t'], codepoints: [162] } },
+    { o: { "&cent;":     { "codepoints": [162], "characters": "\u00A2" } }, result: { paths: ['c','e','n','t',';'], codepoints: [162] } },
+    { o: { "&centerdot;":{ "codepoints": [183], "characters": "\u00B7" } }, result: { paths: ['c','e','n','t','e','r','d','o','t',';'], codepoints: [183] } },
 ];
 exports.htmlEntities = htmlEntities;
 
 /* for the pattern cannot be found */
 var htmlEntitiesFindString = [
-    { str: '&SmallCircle;', result: { codepoints: [ 8728 ], characters: '∘' } },
+    { str: '&SmallCircle;', result: { c: '∘' } },
     { str: '&SmallCircle',  result: undefined },
     { str: '&XXX',          result: undefined },
 
@@ -31,27 +32,27 @@ var htmlEntitiesFindString = [
 ];
 exports.htmlEntitiesFindString = htmlEntitiesFindString;
 
-var htmlEntitiesEncode = [
-    { str: 'abcdefghijklmnop', result: '&#97;&#98;&#99;&#100;&#101;&#102;&#103;&#104;&#105;&#106;&#107;&#108;&#109;&#110;&#111;&#112;' },
-    { str: 'ABCDEFGHIJKLMNOP', result: '&#65;&#66;&#67;&#68;&#69;&#70;&#71;&#72;&#73;&#74;&#75;&#76;&#77;&#78;&#79;&#80;' },
-    { str: '0123456789',       result: '&#48;&#49;&#50;&#51;&#52;&#53;&#54;&#55;&#56;&#57;' },
-    { str: '\u0024',           result: '&#36;' },
-    { str: '\u20ac',           result: '&#8364;' },
-    { str: '\u10437',          result: '&#4163;&#55;' },
-    { str: '\u24B62',          result: '&#9398;&#50;' },
+// var htmlEntitiesEncode = [
+//     { str: 'abcdefghijklmnop', result: '&#97;&#98;&#99;&#100;&#101;&#102;&#103;&#104;&#105;&#106;&#107;&#108;&#109;&#110;&#111;&#112;' },
+//     { str: 'ABCDEFGHIJKLMNOP', result: '&#65;&#66;&#67;&#68;&#69;&#70;&#71;&#72;&#73;&#74;&#75;&#76;&#77;&#78;&#79;&#80;' },
+//     { str: '0123456789',       result: '&#48;&#49;&#50;&#51;&#52;&#53;&#54;&#55;&#56;&#57;' },
+//     { str: '\u0024',           result: '&#36;' },
+//     { str: '\u20ac',           result: '&#8364;' },
+//     { str: '\u10437',          result: '&#4163;&#55;' },
+//     { str: '\u24B62',          result: '&#9398;&#50;' },
 
-    { str: '\uD852\uDF62',     result: '&#150370;' },
-    { str: '\uD801\uDC37',     result: '&#66615;' },
-    { str: '\uDBFF\uDC00',     result: '&#1113088;' },
+//     { str: '\uD852\uDF62',     result: '&#150370;' },
+//     { str: '\uD801\uDC37',     result: '&#66615;' },
+//     { str: '\uDBFF\uDC00',     result: '&#1113088;' },
 
-    { str: '\uFFFF\uDC00',     result: '&#65535;&#56320;' },
-    { str: '\uD800\uDC00',     result: '&#65536;' },
+//     { str: '\uFFFF\uDC00',     result: '&#65535;&#56320;' },
+//     { str: '\uD800\uDC00',     result: '&#65536;' },
 
-    // out of range, skip one char
-    { str: '\uDC00\uDC00',     result: '&#56320;&#56320;' },
-    { str: '\uDFFF\uDC00',     result: '&#57343;&#56320;' },
-];
-exports.htmlEntitiesEncode = htmlEntitiesEncode;
+//     // out of range, skip one char
+//     { str: '\uDC00\uDC00',     result: '&#56320;&#56320;' },
+//     { str: '\uDFFF\uDC00',     result: '&#57343;&#56320;' },
+// ];
+// exports.htmlEntitiesEncode = htmlEntitiesEncode;
 
 var htmlEntitiesDecode = [
     { str: '&#97;&#98;&#99;&#100;&#101;&#102;&#103;&#104;&#105;&#106;&#107;&#108;&#109;&#110;&#111;&#112;',       result: 'abcdefghijklmnop' },

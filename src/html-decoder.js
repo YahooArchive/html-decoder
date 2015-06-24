@@ -9,53 +9,16 @@ Authors: Nera Liu <neraliu@yahoo-inc.com, neraliu@gmail.com>
 (function () {
 "use strict";
 
-var fs = require('fs');
 require('./polyfills/polyfill.js');
-
-/////////////////////////////////////////////////////
-//
-// @module HTMLDecoder
-// 
-/////////////////////////////////////////////////////
-function HTMLDecoder(config) {
-    config || (config = {});
-    var load = config.load === undefined? true: config.load;
-
-    load? this.namedCharReferenceTrie = require('./gen/trie.js') : this.namedCharReferenceTrie = {};
-}
+var trie = require('./gen/trie.json'),
+    matchTrace,
+    HTMLDecoder = {};
 
 /////////////////////////////////////////////////////
 //
 // PUBLIC API
 // 
 /////////////////////////////////////////////////////
-
-/**
-* @function HTMLDecoder#encode
-*
-* @description
-* HTML encode the character
-*
-* TODO: it is blindly encoding, need to enhance it later OR simply remove it?
-*/
-HTMLDecoder.prototype.encode = function(str) {
-    var l = str.length,
-        c1, c2, r = '';
-
-    for(var i=0;i<l;++i) {
-        c1 = str.charCodeAt(i);
-        // 55296-57343
-        if (c1>=0xD800 && c1<=0xDFFF) {
-            c2 = str.codePointAt(i);
-            if (c1 !== c2) {
-                i++; // consume one more char if c1 !== c2 and i+1<l
-                c1 = c2;
-            }
-        }
-        r += "&#"+c1+";";
-    }
-    return r;
-};
 
 /**
 * @function HTMLDecoder#decode
@@ -66,13 +29,14 @@ HTMLDecoder.prototype.encode = function(str) {
 * Reference:
 * https://html.spec.whatwg.org/multipage/syntax.html#tokenizing-character-references
 */
-HTMLDecoder.prototype.reCharReferenceDecode = /&([a-z]{2,31}\d{0,2};?)|&#0*(x[a-f0-9]+|[0-9]+);?/ig;
-HTMLDecoder.prototype.decode = function(str) {
-    var self = this, num, r;
-    return str.replace(this.reCharReferenceDecode, function(m, named, number) {
+HTMLDecoder.reCharReferenceDecode = /&([a-z]{2,31}\d{0,2};?)|&#0*(x[a-f0-9]+|[0-9]+);?/ig;
+HTMLDecoder.decode = function(str) {
+    var num, r;
+
+    return str.replace(HTMLDecoder.reCharReferenceDecode, function(m, named, number) {
         if (named) {
-            r = self._findString(named);
-            return r? r.characters + (r.unconsumed ? r.unconsumed:'') : m;
+            r = HTMLDecoder._findString(trie, named);
+            return r ? r.c + (r.u || '') : m;
         } else {
             num = parseInt(number[0] <= '9' ? number : '0' + number); // parseInt('0xA0') is equiv to parseInt('A0', 16)
             return num === 0x00 ? '\uFFFD' // REPLACEMENT CHARACTER    
@@ -103,7 +67,7 @@ HTMLDecoder.prototype.decode = function(str) {
                        : num === 0x9C ? '\u0153'  // LATIN SMALL LIGATURE OE (œ)
                        : num === 0x9E ? '\u017E'  // LATIN SMALL LETTER Z WITH CARON (ž)
                        : num === 0x9F ? '\u0178'  // LATIN CAPITAL LETTER Y WITH DIAERESIS (Ÿ)
-                       : self.frCoPt(num);
+                       : HTMLDecoder.frCoPt(num);
         }
     });
 };
@@ -115,7 +79,7 @@ HTMLDecoder.prototype.decode = function(str) {
 * Convert the code point to character except those numeric range will trigger the parse error in HTML decoding.
 * https://html.spec.whatwg.org/multipage/syntax.html#tokenizing-character-references  
 */
-HTMLDecoder.prototype.frCoPt = function(num) {
+HTMLDecoder.frCoPt = function(num) {
     return !isFinite(num) ||                  // `NaN`, `+Infinity`, or `-Infinity`
         num <= 0x00 ||                        // NULL or not a valid Unicode code point
         num > 0x10FFFF ||                     // not a valid Unicode code point
@@ -132,131 +96,54 @@ HTMLDecoder.prototype.frCoPt = function(num) {
 
 /////////////////////////////////////////////////////
 //
-// TRIE GENERATION API
-// 
-/////////////////////////////////////////////////////
-
-/**
-* @function HTMLEntites#buildNamedCharReferenceTrie
-*
-* @description
-*/
-HTMLDecoder.prototype.buildNamedCharReferenceTrie = function(obj) {
-    for (var key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            var info = obj[key];
-            this._addStringToTrie(this.namedCharReferenceTrie, key, info);
-        }
-    }
-    return obj;
-};
-
-/**
-* @function HTMLDecoder#saveNamedCharReferenceTrie
-*
-* @description
-* Save the trie in json format.
-*/
-HTMLDecoder.prototype.saveNamedCharReferenceTrie = function(file) {
-    /* NOTE: JSON.stringify convert undefined to null */
-    var json = JSON.stringify(this.namedCharReferenceTrie);
-    var str = '(function() {\n"use strict";\n';
-    str += 'var HTMLNamedCharReferenceTrie = '+json+';\n';
-    str += 'module.exports = HTMLNamedCharReferenceTrie;\n})();\n';
-    fs.writeFileSync(file, str);
-};
-
-/////////////////////////////////////////////////////
-//
 // INTERAL API
 // 
 /////////////////////////////////////////////////////
+
 
 /**
 * @function HTMLDecoder#_findString
 *
 * @description
-* Find whether the string is defined in the trie.
 */
-HTMLDecoder.prototype._findString = function(str) {
-    return this._findStringFromRoot(this.namedCharReferenceTrie, str, 0);
-};
-
-/**
-* @function HTMLDecoder#_findStringFromRoot
-*
-* @description
-*/
-HTMLDecoder.prototype._findStringFromRoot = function(trie, str, pos) {
+HTMLDecoder._findString = function(trie, str, pos) {
     /* init the trace */
-    pos === 0? this.matchTrace = [] : '';
-
-    /* skip the '&' for performance */
-    if (str[pos] === '&') pos++;
+    if (!pos) {
+        pos = 0;
+        matchTrace = [];
+    }
 
     var index = str[pos], l, r;
 
     if (trie[index] === null || trie[index] === undefined) { // end of trie
-        if (this.matchTrace.length > 0) { // return the last longest matched pattern, else return undefined
+        if (matchTrace.length > 0) { // return the last longest matched pattern, else return undefined
             r = {
-                characters: this.matchTrace[this.matchTrace.length-1].info.characters,
-                unconsumed: this.matchTrace[this.matchTrace.length-1].unconsumed
+                c: matchTrace[matchTrace.length-1].c,
+                u: matchTrace[matchTrace.length-1].u
             };
         }
         return r;
     } else if (pos+1 === str.length) { // end of string
         if (trie[index][0] !== null && trie[index][0] !== undefined) {
-            r = trie[index][0];
-        } else if (this.matchTrace.length > 0) { // return the last longest matched pattern, else return undefined
+            r = {c: trie[index][0]};
+        } else if (matchTrace.length > 0) { // return the last longest matched pattern, else return undefined
             r = {
-                characters: this.matchTrace[this.matchTrace.length-1].info.characters,
-                unconsumed: this.matchTrace[this.matchTrace.length-1].unconsumed
+                c: matchTrace[matchTrace.length-1].c,
+                u: matchTrace[matchTrace.length-1].u
             };
         }
         return r;
     } else {
         if (trie[index][0] !== null && trie[index][0] !== undefined) {
-            this.matchTrace.push({ unconsumed: str.substr(pos+1), info: trie[index][0] } );
+            matchTrace.push({
+              u: str.substr(pos+1), 
+              c: trie[index][0]
+            });
         }
-        return this._findStringFromRoot(trie[index], str, pos+1);
+        return HTMLDecoder._findString(trie[index], str, pos+1);
     }
 };
 
-/**
-* @function HTMLDecoder#_addStringToTrie
-*
-* @description
-*/
-HTMLDecoder.prototype._addStringToTrie = function(trie, str, info) {
-    var l = str.length;
-    var rootTrie = trie;
-
-    for(var i=0;i<l;++i) {
-        /* skip the '&' */
-        if (str[i] === '&') continue;
-     
-        var isLastElement = i===l-1? true: false;
-        var childTrie = this._addCharToTrie(rootTrie, str[i], info, isLastElement);
-        rootTrie = childTrie;
-    }
-};
-
-/**
-* @function HTMLDecoder#_addCharToTrie
-*
-* @description
-*/
-HTMLDecoder.prototype._addCharToTrie = function(trie, c, info, isLastElement) {
-    var index = c;
-    if (trie[index] === null || trie[index] === undefined) {
-        trie[index] = {};
-    }
-    if (isLastElement)
-        trie[index][0] = info;
-    return trie[index];
-};
-
-/* exposing it */
 module.exports = HTMLDecoder;
 
 })();
