@@ -16,41 +16,39 @@ Decoding a string with numeric and named character reference.
 ```js
 /* create the html decoder */
 var HTMLDecoder = require("html-decoder");
-decoder = new HTMLDecoder();
 
 var htmlString = "&gt;&gt&gta ...";
 /* html = '<<<a...'; */
-var html = decoder.decode(htmlString);
+var html = HTMLDecoder.decode(htmlString);
 ```
 
 ## Development
 
-### Build
+### How to build
 
 ```sh
-grunt
+npm run-script build
 ```
 
 ### How to test
 ```sh
-grunt test
+npm test
 ```
 
 ## Maintenance
 
-### Generate from WHATWG
+### Get the latest named character reference json from whatwg.org
 ```sh
-grunt gen
+npm run-script gen
 ```
 
 ## OR doing it manually
 
-### Get the latest named character reference json.
 ```sh
 wget https://html.spec.whatwg.org/multipage/entities.json
 ```
 
-### Generate the trie.
+### Generate the trie
 ```sh
 # $REPO_HOME is the home directory of this repo.
 cp entities.json $REPO_HOME/data 
@@ -59,12 +57,10 @@ cp entities.json $REPO_HOME/data
 ./bin/genhtmlentities data/entities.json
 ```
 
-### Test the build again.
+### Test the build again
 ```sh
-grunt test
+npm test
 ```
-
-### Future works
 
 ## License
 
